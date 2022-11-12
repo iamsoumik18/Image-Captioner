@@ -1,5 +1,5 @@
 ---
-title: Image Captioning
+title: Image Captioner
 emoji: 🦀
 colorFrom: red
 colorTo: gray
