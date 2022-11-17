@@ -4,6 +4,7 @@ import streamlit as st
 import requests
 from PIL import Image
 from model import get_caption_model, generate_caption
+from gtts import gTTS
 
 
 @st.cache(allow_output_mutation=True)
@@ -13,20 +14,30 @@ def get_model():
 caption_model = get_model()
 
 
+def text_to_speech(text):
+    tts = gTTS(text)
+    tts.save("temp_audio.mp3")
+
+
+def generate_audio(pred_caption):
+    result = text_to_speech(pred_caption)
+    audio_file = open("temp_audio.mp3", "rb")
+    audio_bytes = audio_file.read()
+    st.markdown('##### Your audio:')
+    st.audio(audio_bytes, format="audio/mp3", start_time=0)
+
+
 def predict():
-    captions = []
-    pred_caption = generate_caption('tmp.jpg', caption_model)
+    try:
+        os.remove('temp_audio.mp3')
+    except:
+        pass
+    st.markdown('#### Predicted Caption:')
+    pred_caption = generate_caption('temp_image.jpg', caption_model)
+    st.write(pred_caption)
+    if st.button('Generate Audio'):
+        generate_audio(pred_caption)
 
-    st.markdown('#### Predicted Captions:')
-    captions.append(pred_caption)
-
-    for _ in range(4):
-        pred_caption = generate_caption('tmp.jpg', caption_model, add_noise=True)
-        if pred_caption not in captions:
-            captions.append(pred_caption)
-    
-    for c in captions:
-        st.write(c)
 
 st.title('Image Captioner')
 img_url = st.text_input(label='Enter Image URL')
@@ -35,9 +46,9 @@ if (img_url != "") and (img_url != None):
     img = Image.open(requests.get(img_url, stream=True).raw)
     img = img.convert('RGB')
     st.image(img)
-    img.save('tmp.jpg')
+    img.save('temp_image.jpg')
     predict()
-    os.remove('tmp.jpg')
+    os.remove('temp_image.jpg')
 
 
 st.markdown('<center style="opacity: 70%">OR</center>', unsafe_allow_html=True)
@@ -47,8 +58,7 @@ if img_upload != None:
     img = img_upload.read()
     img = Image.open(io.BytesIO(img))
     img = img.convert('RGB')
-    img.save('tmp.jpg')
+    img.save('temp_image.jpg')
     st.image(img)
     predict()
-    os.remove('tmp.jpg')
-
+    os.remove('temp_image.jpg')
